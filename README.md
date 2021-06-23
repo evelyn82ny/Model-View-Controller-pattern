@@ -1,1 +1,1 @@
-spring MVC를 쓰게된 과정
+spring MVC를 사용하게된 과정
