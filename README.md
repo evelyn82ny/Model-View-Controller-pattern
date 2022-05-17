@@ -17,7 +17,7 @@
 - 하지만 비즈니스 로직만 변경할 때는 view 코드를 변경할 필요가 없고 반대의 경우도 마찬가지다. 
 - 즉, 개발 시 **라이프 사이클이 다른 경우엔 분리해서 작성해야 유지 보수가 좋아진다**. 
 - 이를 위해 MVC 패턴이 만들어졌다.
-- 
+
 <br>
 
 # controller 와 view 역할 구분
@@ -87,7 +87,7 @@ MVC 패턴을 적용한 결과 **Controller의 역할과 View를 렌더링 하�
 - ```HttpServletRequest```, ```HttpServletResponse``` 의 모든 기능을 사용하지 않으며 test case 작성도 어렵다.
 - 즉, 기능이 복잡해질수록 공통으로 처리해야하는 부분이 많아지기 때문에 컨트롤러 호출 전에 공통 기능을 처리하면 문제를 해결할 수 있다.
 
-이를 해결하기 위ㅎ Front Controller(프론트 컨트롤러) 패턴을 사용한다.
+이를 해결하기 위해 Front Controller(프론트 컨트롤러) 패턴을 사용한다.
 <br>
 
 ![png](/_img/front_controller.png)
@@ -139,7 +139,7 @@ MVC 패턴을 적용한 결과 **Controller의 역할과 View를 렌더링 하�
 - 해당 controller 에서 반환된 view 를 호출하는 방식이며 controller 와 view 가 완전히 분리된다.
 - 여기서 말하는 view 는 실제 spring MVC 의 View 이다.
 
-> Commit: > Commit: https://github.com/evelyn82ny/Model-View-Controller-pattern/commit/0961c4eaeeea88a42bfbcb984206dbe6484a3c11
+> Commit: https://github.com/evelyn82ny/Model-View-Controller-pattern/commit/0961c4eaeeea88a42bfbcb984206dbe6484a3c11
 
 ![png](/_img/210628_view_code.png)
 
@@ -182,6 +182,7 @@ Front Controller에 의해 View가 호출되면 request에서 ```getRequestURI()
 
 - controller 는 FrontController 에게 {View 논리 이름, 데이터가 담긴 Model}인 **ModelAndView** 객체를 반환한다.
 - ModelAndView 코드를 보면 String으로 View의 논리 이름을, Map<String, Object>로 Model를 만들어 데이터를 담는다.
+<br>
 
 ![png](/_img/210629_modelAndView_controllerCode.png)
 
@@ -190,6 +191,7 @@ Front Controller에 의해 View가 호출되면 request에서 ```getRequestURI()
 - ModelAndView 객체의 View 에는 controller 에 해당되는 **view 논리이름**을 저장하고 Model에는 데이터 이름과 데이터를 저장한다.
 - controller에 해당되는 view 논리 이름과 처리한 데이터가 저장된 ModelAndView 객체를 FrontController 로 반환한다.
 - view 논리 이름만 반환하면 되므로 view 의 경로가 바껴도 Controller를 수정할 필요가 없다.
+<br>
 
 ![png](/_img/210629_viewResolver_code.png)
 
@@ -236,6 +238,7 @@ Front Controller에 의해 View가 호출되면 request에서 ```getRequestURI()
 - 렌더링을 위해 view render 메소드 호출 시 frontController Servlet에 있는 model을 그대로 넘겨준다.
 - Controller는 파라미터로 전달받은 Model에 데이터를 저장한다. 
 - 번거롭게 ModelAndView 객체를 생성할 필요없이 View 논리 이름만 반환하면 된다.
+<br>
 
 ![png](/_img/210629_controller_parameterModel_code.png)
 
@@ -270,6 +273,7 @@ Front Controller에 의해 View가 호출되면 request에서 ```getRequestURI()
 
 - mapping value 가 Object 이므로 다양한 interface 를 받을 수 있다.
 - 요청받은 uri 를 수행하는 handler 를 handlerMappingMap 에서 찾는다.
+<br>
 
 ![png](/_img/210629_getAdapter.png)
 
