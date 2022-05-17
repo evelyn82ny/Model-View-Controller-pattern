@@ -6,30 +6,31 @@
 
 <br>
 
-회원 데이터를 받고 저장한 뒤 성공적으로 저장되었다고 노출시키는 view 를 servlet 이나 JSP 만으로 구현가능하다.
-
-- Servlet으로 개발 시 자바 코드에 View를 위한 HTML를 추가
-- JSP으로 View에 대한 HTML을 작성하고 동적 변경이 필요한 부분을 추가 구현
-
 ![png](/_img/210629_simpleRequest.png)
 
-- 이 경우 비즈니스 로직과 view 렌더링이 1개의 파일 안에서 구현한다.
-- 하지만 비즈니스 로직만 변경할 때는 view 코드를 변경할 필요가 없고 반대의 경우도 마찬가지다. 
+- Client의 요청을 처리하는 business 로직과 view 렌더링을 1개의 파일 안에서 구현할 수 있다.
+- Business Logic 수정시 view 코드를 변경할 필요가 없고 반대의 경우도 마찬가지다. 
 - 즉, 개발 시 **라이프 사이클이 다른 경우엔 분리해서 작성해야 유지 보수가 좋아진다**. 
 - 이를 위해 MVC 패턴이 만들어졌다.
+<br>
+
+- [Servlet](#servlet-으로-controller-와-view-역할-구분)
+- [DispatcherServlet](#dispatcherservlet)
+- [View 완전히 분리](#view-분리)
+- [ViewResolver](#viewResolver)
 
 <br>
 
-# controller 와 view 역할 구분
+# Servlet 으로 controller 와 view 역할 구분
 
 ![png](/_img/210628_mvc1.png)
 
 1. Client가 요청하면 **Controller**는 HTTP 요청을 받아 파라미터를 검증한다.
-2. Controller는 **Business 로직**을 실행시켜 원하는 데이터를 처리한다.
-3. Business 로직을 통해 처리된 데이터를 **View**에 전달하기 위해 **Model에 저장**한다. 이때 Model은 ```HttpServletRequest``` 객체이고 내부에 데이터 저장소를 갖고있다.
-4. Controller는 **view 로직**을 호출한다.
-5. view는 Model에 담겨있는 데이터를 사용해 노출할 화면을 HTML로 생성한다.
-6. 클라이언트의 요청에 대한 응답을 한다.
+2. Controller는 **Business Logic**을 실행시켜 데이터를 처리한다.
+3. Business Logic을 통해 처리된 데이터를 **View**에 전달하기 위해 **Model에 저장**한다. 이때 Model은 ```HttpServletRequest``` 객체이고 내부에 데이터 저장소를 갖고있다.
+4. Controller는 View을 호출하면 해당 view는 Model에 담겨있는 데이터를 사용해 노출할 화면을 HTML로 생성한다. (view는 Model의 주소값을 넘겨 받는다.)
+5. Client 요청에 대한 응답을 한다.
+<br>
 
 ![png](/_img/210628_mvcMemberSaveServletCode.png)
 
@@ -44,17 +45,44 @@
 
 <br>
 
+## HttpServlet
+
+```java
+public abstract class HttpServlet extends GenericServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {...}
+
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {...}
+}
+```
+- HttpServlet 추상 클래스를 상속한다.
+- HttpServlet 의 service method를 ```@Override``` 하여 원하는 로직을 구현한다.
+<br>
+
+- Client가 요청하면 Servlet의 ```Service()```가 호출되고
+- ```Service()```는 GET/POST 를 구분해 ```doGet()/doPost()```를 호출한다.
+- 두 method는 ```HttpServletRequest```와 ```HttpServletResponse```를 parameter로 가지고 있는데 Servlet과 Client 사이를 연결한다.
+<br>
+
+## @WebServlet
+
+- 위 MvcMemberSaveServlet 은 member의 정보를 저장하기 위한 Servlet이다. 
+- 즉, 여러 기능에 대한 여러 Servlet을 생성할 수 있다.
+- 그러면 특정 기능을 수행하는 Servlet이 무엇인지 파악해야 하는데 이를 ```@WebServlet``` 이 수행한다.
+- urlPatterns에 작성한 ```/servlet-mvc/members/save``` url로 요청이 들어오면 ServletContainer는 MvcMemberSaveServlet을 호출한다.
+<br>
+
 ## Model
 
-- 데이터를 저장하고 조회하는 model 은 HttpServletRequest 객체를 사용한다. 
-- HttpServletRequest 내부에 데이터 저장소가 있고
+- 데이터를 저장 및 조회하는 model의 역할을 ```HttpServletRequest``` 가 담당한다.
+- ```HttpServletRequest``` 내부에 데이터 저장소가 있고
 - ```setAttribute()```, ```getAttribute()``` 으로 데이터 보관 및 조회한다.
-
 <br>
 
 ## WEB-INF
 
-- MVC 패턴을 통해 controller 로 비즈니스 로직을 처리한 다음 view가 호출되는 것을 원한다.
+- Business logic을 처리한 다음 view를 호출한다.
 - view 경로를 보면 **WEB-INF** 에서 시작한다.
 - WEB-INF 경로안에 있는 html 을 외부에서 직접 호출할 수 없다.
 - 그러므로 **WEB-INF 경로안에 있는 view 는 Controller 에 의해서만 실행**될 수 있다.
@@ -67,7 +95,6 @@
 
 - forward(request, response) 로 다른 servlet 이나 view 로 이동한다. 
 - **Forward 는 서버 내부에서 일어나는 호출이므로 Client가 변경을 인지하지 못한다**.
-
 <br>
 
 ### Redirect
@@ -77,17 +104,16 @@
 
 <br>
 
-# FrontController (DispatcherServlet)
+# DispatcherServlet
 
-MVC 패턴을 적용한 결과 **Controller의 역할과 View를 렌더링 하는 역할을 명확하게 구분**했다.<br>
-회원을 저장, 조회하는 등 많은 기능을 위 코드와 같이 작성할 수 있지만 다음과 같은 문제가 발생한다.<br>
+MVC 패턴을 적용한 결과 **Controller의 역할과 View를 Rendering 하는 역할을 명확하게 구분**했다.<br>
+회원을 저장, 조회하는 등 많은 기능을 위 코드와 같이 ```Service()```을 ```@Override```하여 작성할 수 있지만 다음과 같은 문제가 발생한다.<br>
 
-- view path 가 모두 비슷한 경로일 때나 view 의 경로가 바뀌거나 다른 뷰로 변경한다면 모든 코드를 다 변경해야 한다.
-- ```RequestDispatcher```에서 forward도 모든 코드에서 사용되니 중복처리 하면 간단해질 수 있다.
-- ```HttpServletRequest```, ```HttpServletResponse``` 의 모든 기능을 사용하지 않으며 test case 작성도 어렵다.
-- 즉, 기능이 복잡해질수록 공통으로 처리해야하는 부분이 많아지기 때문에 컨트롤러 호출 전에 공통 기능을 처리하면 문제를 해결할 수 있다.
+- View 경로가 모두 비슷한 경로이거나 View 경로가 바뀌거나 다른 View로 변경한다면 모든 코드를 수정해야한다.
+- ```RequestDispatcher.forward()```도 모든 코드에서 사용되니 중복처리가 필요하다.
+- 즉, 기능이 복잡해질수록 공통으로 처리해야하는 부분이 많아지기 때문에 Controller 호출 전에 공통 기능을 처리하면 문제를 해결할 수 있다.
 
-이를 해결하기 위해 Front Controller(프론트 컨트롤러) 패턴을 사용한다.
+Front Controller 을 구현해 위 문제를 해결해보고 Front Controller는 실제 Spring의 ```DispatcherServlet```과 같다.
 <br>
 
 ![png](/_img/front_controller.png)
@@ -96,71 +122,77 @@ MVC 패턴을 적용한 결과 **Controller의 역할과 View를 렌더링 하�
 - FrontController는 요청에 맞는 Controller를 호출한다. 
 - FrontController는 공통 처리하는 servlet이므로 controller에선 더이상 servlet을 사용하지 않아도 된다. 
 - 즉, controller에서 ```@WebServlet``` 으로 url 을 mapping 하거나 ```HttpServlet```을 상속받지 않아도 된다.
-
-실제 spring MVC 의 **DispatcherServlet**이 front controller 패턴으로 구현되어 있다.
-
 <br>
 
 ![png](/_img/front_controller_mapping.png)
 
-- HTTP request에 맞는 controller를 찾기 위해 front controller는 mapping정보에서 controller를 찾는다. 
+- HTTP request에 맞는 controller를 찾기 위해 front controller는 mapping정보에서 controller를 찾는다.
 - Front Controller는 url과 mapping되는 controller를 호출하고 jsp forward하여 html 응답한다.
+- 실제 spring MVC 의 ```DispatcherServlet```이 위 과정으로 동작한다.
+<br>
 
-다형성을 이용하기 위해 controller를 Interface로 구현하고 회원 저장, 조회 등 각각의 기능은 controller interface 를 상속받아 구현했다. front controller servlet 코드는 다음과 같다.
+## HandlerMapping (Controller URL Mapping)
+
+- 여러 Controller 중 특정 Controller를 찾기 위해 Mapping 정보가 필요했다.
+- 위 Mapping 정보가 실제 Spring의 ```HandlerMapping``` 이다.
+- Client 요청을 처리할 Controller를 찾는다.
+- 요청 URL에 해당하는 Controller 정보를 저장하는 Table이 존재한다.
+
+<br>
+
+다형성을 이용하기 위해 controller를 Interface로 구현하고 회원 저장, 조회 등 각각의 기능은 controller interface 를 상속받아 구현했다.<br>
+여러 Controller를 구분하는 FrontControllerServlet 코드는 다음과 같다.
 
 ![png](/_img/210628_frontControllerServlet_code.png)
 
 > Commit: https://github.com/evelyn82ny/Model-View-Controller-pattern/commit/a66abb5b9977a1ed2fd867f2302580ba9a27a4ea
 
-## 모든 요청 Front Controller로 받기
-
-- ```@WebServlet``` 의 urlPattern 을 ```/front-controller/*``` 로 작성하면 ```/front-controller``` 하위 url은 해당 servlet으로 들어온다. 
-- 모든 요청을 FrontController로 받는 과정이 수행된다.
-
 <br>
 
-## HttpServletRequest getRequestURI()
+## 모든 요청 Front Controller로 받기
+
+- ```@WebServlet``` 의 urlPattern 을 ```/front-controller/*``` 로 작성하면 ```/front-controller``` 하위 url은 해당 servlet으로 들어온다.
+<br>
+
+## HttpServletRequest.getRequestURI()
 
 - controllerMap 에 **{ key: mapping URI , value: 호출될 controller }** 로 여러 controller를 저장했다. 
-- ```getRequestURI()```로 요청된 URI를 읽고, controllerMap에서 mapping된 controller를 찾는다.
-- controller 를 찾았다면 해당 controller 의 process 를 수행한다.
-- 만약 controller 를 찾지 못했다면 404 상태 코드(SC_NOT_FOUND)를 반환한다.
-
+- ```getRequestURI()```로 요청된 URI를 읽고 controllerMap에서 mapping된 controller를 찾는다.
+- controller를 찾았다면 해당 controller의 process를 수행한다.
+- 만약 controller를 찾지 못했다면 404 상태 코드(SC_NOT_FOUND)를 반환한다.
 <br>
 
 # View 분리
 
-위 과정을 통해 요청에 맞는 controller를 찾고 공통 부분 처리를 위한 Front Controller servlet를 추가했다.<br>
-하지만 controller에서 view를 직접 Forward하는 상태이므로 controller와 view가 완전히 분리된 상태가 아니다.
+위 과정을 통해 요청에 맞는 controller를 찾고 공통 부분 처리를 위한 ```FrontControllerServlet```를 추가했다.<br>
+하지만 지금은 controller에서 view를 직접 Forward하는 상태이므로 controller와 view가 완전히 분리된 상태가 아니다.
 
 ![png](/_img/architecture_that_call_render_method.png)
 
-- controller 에서 해당되는 view를 Front controller로 반환한다. 
-- 해당 controller 에서 반환된 view 를 호출하는 방식이며 controller 와 view 가 완전히 분리된다.
-- 여기서 말하는 view 는 실제 spring MVC 의 View 이다.
+- Controller에서 해당되는 View를 Front controller로 반환한다. 
+- 해당 Controller에서 반환된 View를 호출하면 Controller와 View가 완전히 분리된다.
+- 여기서 말하는 View는 실제 spring MVC의 View이다.
+<br>
 
 > Commit: https://github.com/evelyn82ny/Model-View-Controller-pattern/commit/0961c4eaeeea88a42bfbcb984206dbe6484a3c11
 
 ![png](/_img/210628_view_code.png)
 
-Front Controller에 의해 View가 호출되면 request에서 ```getRequestURI()```로 uri 를 읽어 forward 로직을 수행하여 JSP 가 실행된다.
-
 ![png](/_img/210628_view_frontControllerServlet.png)
 
-- 모든 controller 는 해당되는 View 객체를 생성하여 FrontControllerServlet 에 반환한다. 
-- FrontControllerServlet 은 받은 View 의 ```render()```을 실행한다. 
-- front controller 를 통해 View 객체의 ```render()``` 호출을 일관되게 처리하게 된다.
-
+- 모든 controller 는 해당되는 View 객체를 생성하여 ```FrontControllerServlet```에 반환한다. 
+- ```FrontControllerServlet```은 받은 View의 ```render()```을 호출한다.
+- 즉, ```FrontControllerServlet```를 통해 View 객체의 ```render()``` 호출을 일관되게 처리할 수 있게 되었다.
 <br>
 
-# httpServlet 대신 Model 로 변경 및 ViewResolver로 물리주소 받기
+# ViewResolver
 
 ## 중복되는 view 경로 제거
 
-- 현재 모든 controller 에서 view 경로를  ```return new View("/WEB-INF/views/save-result.jsp");```인 물리 경로로 반환한다. 
-- **/WEB-INF/views** 는 중복되는 부분이먀 만약 수많은 view 코드가 있는 views 폴더를 다른 폴더로 옮긴다면 모든 controller 코드를 변경해야한다.
-
-이를 해결하기 위해 controller는 해당되는 view의 논리 이름만 반환하고 front controller에서 받은 view 논리 이름을 물리 주소로 변경한다.
+- 모든 Controller 에서 View 경로를  ```return new View("/WEB-INF/views/save-result.jsp");```처럼 물리 경로를 반환한다. 
+- **/WEB-INF/views** 는 중복되는 부분이고 만약 수많은 view 코드가 있는 views 폴더를 다른 폴더로 옮긴다면 모든 Controller 코드를 수정해야 한다.
+- 이를 해결하기 위해 Controller는 해당되는 View의 논리 이름만 반환하고 Front Controller는 받은 View 논리 이름을 물리 주소로 변경하면 중복을 처리할 수 있다.
+<br>
 
 - view 물리 주소 : /WEB-INF/views/save-result.jsp
 - view 논리 이름 : save-result
@@ -169,10 +201,11 @@ Front Controller에 의해 View가 호출되면 request에서 ```getRequestURI()
 
 ## servlet 종속성 제거
 
-- 여러 controller는 파라미터로 ```httpServletRequest```, ```httpServletResponse``` 를 받도록 했지만 항상 사용하지 않았다. 
-- 또한, controller는 servlet 기술이 아닌 처리 해야하는 데이터만 필요하므로 servlet 자체를 넘겨주는게 불필요해 보인다.
+- 여러 Controller는 파라미터로 ```httpServletRequest```, ```httpServletResponse``` 를 받도록 했지만 모든 기능을 사용하지 않았다.
+- 또한, Controller는 servlet 기술이 아닌 처리 해야하는 데이터만 필요하므로 servlet 자체를 넘겨주는게 불필요해 보인다.
 - 이를 해결하기 위해 ```HttpServlet``` 객체를 Model로 사용하지 않고 Model객체를 생성하여 이용한다. 
-- 즉, controller가 servlet 기술을 알 필요없이 데이터만 처리할 수 있도록 servlet 종속성을 제거한다.
+- 즉, Controller가 servlet 기술을 알 필요없이 데이터만 처리할 수 있도록 servlet 종속성을 제거한다.
+<br>
 
 ![png](/_img/architecture_with_view_resolver_applied.png)
 
@@ -180,43 +213,41 @@ Front Controller에 의해 View가 호출되면 request에서 ```getRequestURI()
 
 ![png](/_img/210629_modelAndView_code.png)
 
-- controller 는 FrontController 에게 {View 논리 이름, 데이터가 담긴 Model}인 **ModelAndView** 객체를 반환한다.
+- Controller는 FrontController에게 {View 논리 이름, 데이터가 담긴 Model}인 **ModelAndView** 객체를 반환한다.
 - ModelAndView 코드를 보면 String으로 View의 논리 이름을, Map<String, Object>로 Model를 만들어 데이터를 담는다.
 <br>
 
 ![png](/_img/210629_modelAndView_controllerCode.png)
 
-- 위 코드는 회원을 저장하는 Controller이며 전달받는 파라미터가 httpServlet 이 아니라 요청을 처리하기 위해 필요한 데이터이다. 
-- 받은 데이터로 controller 의 역할을 수행한 뒤 반환하기 위한 ModelAndView 객체를 생성한다.
-- ModelAndView 객체의 View 에는 controller 에 해당되는 **view 논리이름**을 저장하고 Model에는 데이터 이름과 데이터를 저장한다.
-- controller에 해당되는 view 논리 이름과 처리한 데이터가 저장된 ModelAndView 객체를 FrontController 로 반환한다.
-- view 논리 이름만 반환하면 되므로 view 의 경로가 바껴도 Controller를 수정할 필요가 없다.
+- 위 코드는 회원을 저장하는 Controller이며,  ```httpServlet``` 이 아닌 요청을 처리하기 위한 필요한 데이터만 파라미터로 전달받는다.
+- 받은 데이터로 Business logic을 수행한 뒤 결과를 반환하기 위한 ModelAndView 객체를 생성한다.
+- ModelAndView 객체의 View에는 결과를 출력할 **View 논리이름**을, Model에는 데이터 이름과 결과 데이터를 저장 후 FrontController에게 반환한다.
+- View 논리 이름만 반환하기 때문에 View 경로가 바뀌어도 Controller를 수정할 필요가 없다.
 <br>
 
 ![png](/_img/210629_viewResolver_code.png)
 
-위 코드는 ModelAndView 와 ViewResolver 을 적용했다.
+이제 ```FrontControllerServlet```은 ```ModelAndView``` 객체를 반환받고 ```ViewResolver```룰 사용한다.
 
 ### createParamMap
 
-- FrontController Servlet 은 클라이언트의 요청에 따른 HTTP request message 를 처리하여 ```HttpServletRequest```, ```HttpServletResponse``` 객체를 전달받는다. 
-- 전달받은 httpServlet을 그대로 controller에게 전달하지 않고 처리해야하는 데이터만 뽑아 전달한다.
-- createParamMap 메소드로 ```HttpServletRequest```에서 데이터만 뽑아 Map<String, String>에 저장한 뒤 controller에게 전달한다. 
+- ```FrontControllerServlet```은 클라이언트의 요청에 따른 HTTP request message를 처리하여 ```HttpServletRequest```, ```HttpServletResponse``` 객체를 전달받는다. 
+- 전달받은 httpServlet을 그대로 Controller에게 전달하지 않고 처리해야하는 데이터만 전달한다.
+- createParamMap 메소드로 ```HttpServletRequest```에서 데이터만 Map<String, String>에 저장한 뒤 controller에게 전달한다. 
 - controller는 전달받은 데이터를 처리해 ModelAndView 객체로 반환한다.
 
 ### viewResolver
 
-- ViewResolver 는 controller 에게 받은 view 논리 이름을 물리 주소 변경한다. 
-- 이처럼 view 경로가 변경면 controller 코드를 수정할 필요없이 viewResolver 메소드만 변경하면 된다. 
-- view 에서 렌더링 하기 위해 Model 도 같이 넘겨 준다.
+- ViewResolver는 Controller에게 받은 View 논리 이름을 물리 주소 변경한다. 
+- 만약 View 경로가 변경되면 Controller 코드를 수정할 필요없이 viewResolver method만 수정하면 된다.
+- view에서 rendering 하기위해 Model도 같이 넘겨 준다.
 
 ![png](/_img/210629_viewRender.png)
 
 > Commit: https://github.com/evelyn82ny/Model-View-Controller-pattern/commit/a4afa239426fdcb0c2ca0e7ac3c4778daf2afb2e
 
-- frontController Servlet 에 있는 Model 을 파라미터로 받는다. 
+- FrontControllerServlet에게 Model을 파라미터로 전달받는다.
 - ```HttpServletRequest```와 ```HttpServletResponse``` 객체를 forward 하기 위해 ```setAttribute()```로 Model data를 ```HttpServletRequest``` 객체에 저장한다.
-
 <br>
 
 
