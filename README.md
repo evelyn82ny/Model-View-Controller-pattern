@@ -251,8 +251,30 @@ Front Controller 을 구현해 위 문제를 해결해보고 Front Controller는
 - FrontControllerServlet에게 Model을 파라미터로 전달받는다.
 - ```HttpServletRequest```와 ```HttpServletResponse``` 객체를 forward 하기 위해 ```setAttribute()```로 Model data를 ```HttpServletRequest``` 객체에 저장한다.
 <br>
+
 - ServletResponse의 ```getRequestDispatcher(the pathname to the resource)``` 를 호출해 지정된 경로에 있는 resource의 wrapper 역할하는 ```RequestDispatcher``` 객체를 얻는다.
+- ```getRequestDispatcher()```를 통해 얻는 ```RequestDispatcher```의 경우 Target Resource 경로와 일치하도 경로 요소와 파라미터를 ```ServletRequest```에 조정한다.
 - 그 후 RequestDispatcher의 ```forward(ServletRequest, ServletResponse)``` 를 호출해 Servlet에서 Server의 다른 리소스(JSP, HTML 등)로 요청을 전달한다.
+<br>
+
+```java
+package javax.servlet;
+
+public interface RequestDispatcher {
+    public void forward(ServletRequest request, ServletResponse response)
+            throws ServletException, IOException;
+}
+```
+- Servlet에서 서버내의 다른 resource(servlet, JSP, HTML)로 요청을 전달
+- 응답이 client에게 commit 되기 전에 전달
+- 응답이 이미 commit 되었다면 ```IllegalStateExcpetion``` 발생
+- response butter의 uncommitted output은 forward 하기 전에 제거₩
+<br>
+
+![png](/_img/HttpServletResponse_HttpServletRequest_diagram.png)
+
+- ```ServletRequest```: object that represents the request the client makes of the servlet
+- ```ServletResponse```: object that represents the response the servlet returns to the client
 <br>
 
 # return View
