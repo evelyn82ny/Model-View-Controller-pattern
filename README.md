@@ -268,7 +268,7 @@ public interface RequestDispatcher {
 - Servlet에서 서버내의 다른 resource(servlet, JSP, HTML)로 요청을 전달
 - 응답이 client에게 commit 되기 전에 전달
 - 응답이 이미 commit 되었다면 ```IllegalStateExcpetion``` 발생
-- response butter의 uncommitted output은 forward 하기 전에 제거₩
+- response butter의 uncommitted output은 forward 하기 전에 제거
 <br>
 
 ![png](/_img/HttpServletResponse_HttpServletRequest_diagram.png)
